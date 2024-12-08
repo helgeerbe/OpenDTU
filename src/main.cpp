@@ -12,7 +12,6 @@
 #include "SerialPortManager.h"
 #include "VictronMppt.h"
 #include <battery/Controller.h>
-#include <battery/MqttHandleBatteryHass.h>
 #include "Huawei_can.h"
 #include "MqttHandleDtu.h"
 #include "MqttHandleHass.h"
@@ -139,7 +138,6 @@ void setup()
     MqttHandleVedirect.init(scheduler);
     MqttHandleHass.init(scheduler);
     MqttHandleVedirectHass.init(scheduler);
-    MqttHandleBatteryHass.init(scheduler);
     MqttHandleHuawei.init(scheduler);
     MqttHandlePowerLimiter.init(scheduler);
     MqttHandlePowerLimiterHass.init(scheduler);

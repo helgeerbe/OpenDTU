@@ -6,7 +6,6 @@
 #include "ArduinoJson.h"
 #include "AsyncJson.h"
 #include <battery/Controller.h>
-#include <battery/MqttHandleBatteryHass.h>
 #include "Configuration.h"
 #include "MqttHandlePowerLimiterHass.h"
 #include "WebApi.h"
@@ -81,7 +80,6 @@ void WebApiBatteryClass::onAdminPost(AsyncWebServerRequest* request)
     WebApi.sendJsonResponse(request, response, __FUNCTION__, __LINE__);
 
     Battery.updateSettings();
-    MqttHandleBatteryHass.forceUpdate();
 
     // potentially make SoC thresholds auto-discoverable
     MqttHandlePowerLimiterHass.forceUpdate();

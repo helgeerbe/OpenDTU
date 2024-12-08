@@ -4,6 +4,7 @@
 #include <espMqttClient.h>
 #include <battery/Provider.h>
 #include <battery/mqtt/Stats.h>
+#include <battery/mqtt/HassIntegration.h>
 
 namespace BatteryNs::Mqtt {
 
@@ -15,6 +16,7 @@ public:
     void deinit() final;
     void loop() final { return; } // this class is event-driven
     std::shared_ptr<::BatteryNs::Stats> getStats() const final { return _stats; }
+    ::BatteryNs::HassIntegration const& getHassIntegration() const final { return _hassIntegration; }
 
 private:
     bool _verboseLogging = false;
@@ -22,6 +24,7 @@ private:
     String _voltageTopic;
     String _dischargeCurrentLimitTopic;
     std::shared_ptr<Stats> _stats = std::make_shared<Stats>();
+    HassIntegration _hassIntegration;
     uint8_t _socPrecision = 0;
 
     void onMqttMessageSoC(espMqttClientTypes::MessageProperties const& properties,

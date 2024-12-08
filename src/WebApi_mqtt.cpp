@@ -4,7 +4,7 @@
  */
 #include "WebApi_mqtt.h"
 #include "Configuration.h"
-#include <battery/MqttHandleBatteryHass.h>
+#include <battery/Controller.h>
 #include "MqttHandleHass.h"
 #include "MqttHandlePowerLimiterHass.h"
 #include "MqttHandleInverter.h"
@@ -331,10 +331,10 @@ void WebApiMqttClass::onMqttAdminPost(AsyncWebServerRequest* request)
 
     MqttSettings.performReconnect();
 
-    MqttHandleBatteryHass.forceUpdate();
     MqttHandleHass.forceUpdate();
     MqttHandlePowerLimiterHass.forceUpdate();
     MqttHandleVedirectHass.forceUpdate();
+    Battery.updateSettings();
 
     MqttHandleHuawei.forceUpdate();
     MqttHandlePowerLimiter.forceUpdate();

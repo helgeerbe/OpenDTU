@@ -9,6 +9,7 @@
 #include <battery/jkbms/DataPoints.h>
 #include <battery/jkbms/SerialMessage.h>
 #include <battery/jkbms/Dummy.h>
+#include <battery/jkbms/HassIntegration.h>
 
 //#define JKBMS_DUMMY_SERIAL
 
@@ -22,6 +23,7 @@ public:
     void deinit() final;
     void loop() final;
     std::shared_ptr<::BatteryNs::Stats> getStats() const final { return _stats; }
+    ::BatteryNs::HassIntegration const& getHassIntegration() const final { return _hassIntegration; }
 
 private:
     static char constexpr _serialPortOwner[] = "JK BMS";
@@ -82,6 +84,7 @@ private:
     SerialResponse::tData _buffer = {};
     std::shared_ptr<Stats> _stats =
         std::make_shared<Stats>();
+    HassIntegration _hassIntegration;
 };
 
 } // namespace BatteryNs::JkBms

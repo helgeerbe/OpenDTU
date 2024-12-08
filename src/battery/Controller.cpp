@@ -9,6 +9,7 @@
 #include <battery/victronsmartshunt/Provider.h>
 #include <Configuration.h>
 #include <MessageOutput.h>
+#include <MqttSettings.h>
 
 BatteryNs::Controller Battery;
 
@@ -78,6 +79,8 @@ void Controller::updateSettings()
     }
 
     if (!_upProvider->init(verboseLogging)) { _upProvider = nullptr; }
+
+    _publishSensors = true;
 }
 
 void Controller::loop()
@@ -89,6 +92,22 @@ void Controller::loop()
     _upProvider->loop();
 
     _upProvider->getStats()->mqttLoop();
+
+    auto const& config = Configuration.get();
+    if (!config.Mqtt.Hass.Enabled) { return; }
+
+    // TODO(schlimmchen): this cannot make sure that transient
+    // connection problems are actually always noticed.
+    if (!MqttSettings.getConnected()) {
+        _publishSensors = true;
+        return;
+    }
+
+    if (!_publishSensors) { return; }
+
+    _upProvider->getHassIntegration().publishSensors();
+
+    _publishSensors = false;
 }
 
 float Controller::getDischargeCurrentLimit()
