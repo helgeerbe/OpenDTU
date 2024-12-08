@@ -2,13 +2,13 @@
 /*
  * Copyright (C) 2023 Malte Schmidt and others
  */
-#include "Battery.h"
+#include <battery/Controller.h>
+#include <battery/Stats.h>
 #include "Huawei_can.h"
 #include "MessageOutput.h"
 #include "PowerMeter.h"
 #include "PowerLimiter.h"
 #include "Configuration.h"
-#include "Battery.h"
 #include "SpiManager.h"
 #include <mcp_can.h>
 
@@ -513,6 +513,3 @@ void HuaweiCanClass::setMode(uint8_t mode) {
     _mode = mode;
   }
 }
-
-
-

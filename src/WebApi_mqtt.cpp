@@ -4,7 +4,7 @@
  */
 #include "WebApi_mqtt.h"
 #include "Configuration.h"
-#include "MqttHandleBatteryHass.h"
+#include <battery/MqttHandleBatteryHass.h>
 #include "MqttHandleHass.h"
 #include "MqttHandlePowerLimiterHass.h"
 #include "MqttHandleInverter.h"

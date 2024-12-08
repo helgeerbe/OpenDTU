@@ -5,7 +5,8 @@
 #include "WebApi_ws_battery.h"
 #include "AsyncJson.h"
 #include "Configuration.h"
-#include "Battery.h"
+#include <battery/Controller.h>
+#include <battery/Stats.h>
 #include "MessageOutput.h"
 #include "WebApi.h"
 #include "defaults.h"

@@ -5,9 +5,9 @@
 
 #include "ArduinoJson.h"
 #include "AsyncJson.h"
-#include "Battery.h"
+#include <battery/Controller.h>
+#include <battery/MqttHandleBatteryHass.h>
 #include "Configuration.h"
-#include "MqttHandleBatteryHass.h"
 #include "MqttHandlePowerLimiterHass.h"
 #include "WebApi.h"
 #include "WebApi_battery.h"

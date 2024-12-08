@@ -7,7 +7,8 @@
 #include "MessageOutput.h"
 #include "Utils.h"
 #include "WebApi.h"
-#include "Battery.h"
+#include <battery/Controller.h>
+#include <battery/Stats.h>
 #include "Huawei_can.h"
 #include "PowerMeter.h"
 #include "VictronMppt.h"
