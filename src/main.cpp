@@ -40,6 +40,7 @@
 #include <SpiManager.h>
 #include <TaskScheduler.h>
 #include <esp_heap_caps.h>
+#include "BatteryGuard.h"
 
 void setup()
 {
@@ -197,6 +198,8 @@ void setup()
     }
 
     Battery.init(scheduler);
+
+    BatteryGuard.init(scheduler);
 }
 
 void loop()
