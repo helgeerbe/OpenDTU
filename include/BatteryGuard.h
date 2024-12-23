@@ -12,10 +12,8 @@ class BatteryGuardClass {
 
         void init(Scheduler& scheduler);
         void updateSettings(void);
-
-        std::optional<float> calculateOpenCircuitVoltage(float const nowVoltage, float const nowCurrent);
-        std::optional<float> getOpenCircuitVoltage(void) const;
-        std::optional<float> calculateInternalResistance(float const nowVoltage, float const nowCurrent);
+        void updateBatteryValues(float const nowVoltage, float const nowCurrent, uint32_t const millisStamp);
+        std::optional<float> getOpenCircuitVoltage(void);
         std::optional<float> getInternalResistance(void) const;
 
     private:
@@ -26,24 +24,35 @@ class BatteryGuardClass {
             Q_BAD = 3,
             T_HEAD = 4
         };
+
         void loop(void);
+        bool calculateOpenCircuitVoltage(float const nowVoltage, float const nowCurrent);
+        bool calculateInternalResistance(float const nowVoltage, float const nowCurrent);
         void printOpenCircuitVoltageInformationBlock(void);
         frozen::string const& getText(Text tNr);
 
-        // used for calculation of the "Open circuit voltage"
-        WeightedAVG<float> _openCircuitVoltageAVG {10};     // battery open circuit voltage (average factor 10%)
-        uint32_t _lastOCVMillis = 0;                        // last millis of calculation of the open circuit voltage
-        float _resistorConfig = 0.0f;                       // value from configuration or resistance calculation
+        // Returns true if battery data is not older as 30 seconds
+        bool isDataValid() { return (millis() - _battMillis) < 30*1000; }
 
-        // used for calculation of the "Battery internal resistance"
-        WeightedAVG<float> _internalResistanceAVG {10};     // resistor (average factor 10%)
-        bool _firstOfTwoAvailable = false;                  // false after to got the first of two values
-        bool _minMaxAvailable = false;                      // minimum and maximum values available
-        std::pair<float,float> _firstVolt = {0.0f,0.0f};    // first of two voltage and related current
-        std::pair<float,float> _maxVolt = {0.0f,0.0f};      // maximum voltage and related current
-        std::pair<float,float> _minVolt = {0.0f,0.0f};      // minimum voltage and related current
-        uint32_t _lastMinMaxMillis = 0;                     // last millis from the first min/max values
-        float const _minDiffVoltage = 0.05f;                // 50mV minimum difference to calculate a resistance (Smart Shunt)
+        // the following values ​​are used to calculate the "Open circuit voltage"
+        float _battVoltage = 0.0f;                          // actual battery voltage [V]
+        float _battCurrent = 0.0f;                          // actual battery current [A]
+        uint32_t _battMillis = 0;                           // measurement time stamp [millis()]
+        WeightedAVG<uint32_t> _battPeriod {20};             // measurement period [ms]
+        WeightedAVG<float> _battVoltageAVG {5};             // average battery voltage [V]
+        WeightedAVG<float> _openCircuitVoltageAVG {5};      // average battery open circuit voltage [V]
+        float _resistanceFromConfig = 0.0f;                 // configured battery resistance [Ohm]
+        size_t _notAvailableCounter = 0;                    // voltage or current were not available counter
+
+        // the following values ​​are used to calculate the "Battery internal resistance"
+        WeightedAVG<float> _resistanceFromCalcAVG {10};     // calculated battery resistance [Ohm]
+        bool _firstOfTwoAvailable = false;                  // true after to got the first of two values
+        bool _minMaxAvailable = false;                      // true if minimum and maximum values are available
+        std::pair<float,float> _pFirstVolt = {0.0f,0.0f};   // first of two voltages and related current [V,A]
+        std::pair<float,float> _pMaxVolt = {0.0f,0.0f};     // maximum voltage and related current [V,A]
+        std::pair<float,float> _pMinVolt = {0.0f,0.0f};     // minimum voltage and related current [V,A]
+        uint32_t _lastMinMaxMillis = 0;                     // last millis from the first min/max values [millis()]
+        float const _minDiffVoltage = 0.05f;                // minimum required difference [V]
                                                             // unclear if this value will also fit to other battery provider
 
         Task _loopTask;                                     // Task

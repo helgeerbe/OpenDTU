@@ -864,10 +864,9 @@ void VictronSmartShuntStats::updateFrom(VeDirectShuntController::data_t const& s
     _alarmLowTemperature = shuntData.alarmReason_AR & 32;
     _alarmHighTemperature = shuntData.alarmReason_AR & 64;
 
-    auto voltage = shuntData.batteryVoltage_V_mV / 1000.0f;
-    auto current = shuntData.batteryCurrent_I_mA / 1000.0f;
-    _oBatteryResistor = BatteryGuard.calculateInternalResistance(voltage, current);
-    _oOpenCircuitVoltage = BatteryGuard.calculateOpenCircuitVoltage(voltage, current);
+    BatteryGuard.updateBatteryValues(shuntData.batteryVoltage_V_mV / 1000.0f, shuntData.batteryCurrent_I_mA / 1000.0f, millis()); //todo: why millis()?
+    _oBatteryResistor = BatteryGuard.getInternalResistance();
+    _oOpenCircuitVoltage = BatteryGuard.getOpenCircuitVoltage();
 
     _lastUpdate = VeDirectShunt.getLastUpdate();
 }
