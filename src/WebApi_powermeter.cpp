@@ -9,9 +9,9 @@
 #include "MqttHandleHass.h"
 #include "MqttSettings.h"
 #include "PowerLimiter.h"
-#include "PowerMeter.h"
-#include "PowerMeterHttpJson.h"
-#include "PowerMeterHttpSml.h"
+#include <powermeter/Controller.h>
+#include <powermeter/json/http/Provider.h>
+#include <powermeter/sml/http/Provider.h>
 #include "WebApi.h"
 #include "helper.h"
 
@@ -116,7 +116,7 @@ void WebApiPowerMeterClass::onAdminPost(AsyncWebServerRequest* request)
         return true;
     };
 
-    if (static_cast<PowerMeterProvider::Type>(root["source"].as<uint8_t>()) == PowerMeterProvider::Type::HTTP_JSON) {
+    if (static_cast<::PowerMeters::Provider::Type>(root["source"].as<uint8_t>()) == ::PowerMeters::Provider::Type::HTTP_JSON) {
         JsonObject httpJson = root["http_json"];
         JsonArray valueConfigs = httpJson["values"];
         for (uint8_t i = 0; i < valueConfigs.size(); i++) {
@@ -142,7 +142,7 @@ void WebApiPowerMeterClass::onAdminPost(AsyncWebServerRequest* request)
         }
     }
 
-    if (static_cast<PowerMeterProvider::Type>(root["source"].as<uint8_t>()) == PowerMeterProvider::Type::HTTP_SML) {
+    if (static_cast<::PowerMeters::Provider::Type>(root["source"].as<uint8_t>()) == ::PowerMeters::Provider::Type::HTTP_SML) {
         JsonObject httpSml = root["http_sml"];
         if (!checkHttpConfig(httpSml["http_request"].as<JsonObject>())) {
             return;
@@ -195,10 +195,10 @@ void WebApiPowerMeterClass::onTestHttpJsonRequest(AsyncWebServerRequest* request
     auto powerMeterConfig = std::make_unique<PowerMeterHttpJsonConfig>();
     Configuration.deserializePowerMeterHttpJsonConfig(root["http_json"].as<JsonObject>(),
             *powerMeterConfig);
-    auto upMeter = std::make_unique<PowerMeterHttpJson>(*powerMeterConfig);
+    auto upMeter = std::make_unique<::PowerMeters::Json::Http::Provider>(*powerMeterConfig);
     upMeter->init();
     auto res = upMeter->poll();
-    using values_t = PowerMeterHttpJson::power_values_t;
+    using values_t = ::PowerMeters::Json::Http::Provider::power_values_t;
     if (std::holds_alternative<values_t>(res)) {
         retMsg["type"] = "success";
         auto vals = std::get<values_t>(res);
@@ -236,7 +236,7 @@ void WebApiPowerMeterClass::onTestHttpSmlRequest(AsyncWebServerRequest* request)
     auto powerMeterConfig = std::make_unique<PowerMeterHttpSmlConfig>();
     Configuration.deserializePowerMeterHttpSmlConfig(root["http_sml"].as<JsonObject>(),
             *powerMeterConfig);
-    auto upMeter = std::make_unique<PowerMeterHttpSml>(*powerMeterConfig);
+    auto upMeter = std::make_unique<::PowerMeters::Sml::Http::Provider>(*powerMeterConfig);
     upMeter->init();
     auto res = upMeter->poll();
     if (res.isEmpty()) {

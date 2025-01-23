@@ -4,7 +4,7 @@
  */
 
 #include "Battery.h"
-#include "PowerMeter.h"
+#include <powermeter/Controller.h>
 #include "PowerLimiter.h"
 #include "Configuration.h"
 #include "MqttSettings.h"

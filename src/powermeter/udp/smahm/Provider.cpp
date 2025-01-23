@@ -2,10 +2,12 @@
 /*
  * Copyright (C) 2024 Holger-Steffen Stapf
  */
-#include "PowerMeterUdpSmaHomeManager.h"
+#include <powermeter/udp/smahm/Provider.h>
 #include <Arduino.h>
 #include <WiFiUdp.h>
 #include "MessageOutput.h"
+
+namespace PowerMeters::Udp::SmaHM {
 
 static constexpr unsigned int multicastPort = 9522;  // local port to listen on
 static const IPAddress multicastIP(239, 12, 255, 254);
@@ -13,35 +15,35 @@ static WiFiUDP SMAUdp;
 
 constexpr uint32_t interval = 1000;
 
-void PowerMeterUdpSmaHomeManager::Soutput(int kanal, int index, int art, int tarif,
+void Provider::Soutput(int kanal, int index, int art, int tarif,
         char const* name, float value, uint32_t timestamp)
 {
     if (!_verboseLogging) { return; }
 
-    MessageOutput.printf("[PowerMeterUdpSmaHomeManager] %s = %.1f (timestamp %u)\r\n",
+    MessageOutput.printf("[PowerMeters::Udp::SmaHM] %s = %.1f (timestamp %u)\r\n",
             name, value, timestamp);
 }
 
-bool PowerMeterUdpSmaHomeManager::init()
+bool Provider::init()
 {
     SMAUdp.begin(multicastPort);
     SMAUdp.beginMulticast(multicastIP, multicastPort);
     return true;
 }
 
-PowerMeterUdpSmaHomeManager::~PowerMeterUdpSmaHomeManager()
+Provider::~Provider()
 {
     SMAUdp.stop();
 }
 
-void PowerMeterUdpSmaHomeManager::doMqttPublish() const
+void Provider::doMqttPublish() const
 {
     mqttPublish("power1", _powerMeterL1);
     mqttPublish("power2", _powerMeterL2);
     mqttPublish("power3", _powerMeterL3);
 }
 
-uint8_t* PowerMeterUdpSmaHomeManager::decodeGroup(uint8_t* offset, uint16_t grouplen)
+uint8_t* Provider::decodeGroup(uint8_t* offset, uint16_t grouplen)
 {
     float Pbezug = 0;
     float BezugL1 = 0;
@@ -145,7 +147,7 @@ uint8_t* PowerMeterUdpSmaHomeManager::decodeGroup(uint8_t* offset, uint16_t grou
             continue;
         }
 
-        MessageOutput.printf("[PowerMeterUdpSmaHomeManager] Skipped unknown measurement: %d %d %d %d\r\n",
+        MessageOutput.printf("[PowerMeters::Udp::SmaHM] Skipped unknown measurement: %d %d %d %d\r\n",
                 kanal, index, art, tarif);
         offset += art;
     }
@@ -153,7 +155,7 @@ uint8_t* PowerMeterUdpSmaHomeManager::decodeGroup(uint8_t* offset, uint16_t grou
     return offset;
 }
 
-void PowerMeterUdpSmaHomeManager::loop()
+void Provider::loop()
 {
     uint32_t currentMillis = millis();
     if (currentMillis - _previousMillis < interval) { return; }
@@ -166,7 +168,7 @@ void PowerMeterUdpSmaHomeManager::loop()
     uint8_t buffer[1024];
     int rSize = SMAUdp.read(buffer, 1024);
     if (buffer[0] != 'S' || buffer[1] != 'M' || buffer[2] != 'A') {
-        MessageOutput.println("[PowerMeterUdpSmaHomeManager] Not an SMA packet?");
+        MessageOutput.println("[PowerMeters::Udp::SmaHM] Not an SMA packet?");
         return;
     }
 
@@ -197,8 +199,10 @@ void PowerMeterUdpSmaHomeManager::loop()
             continue;
         }
 
-        MessageOutput.printf("[PowerMeterUdpSmaHomeManager] Unhandled group 0x%04x with length %d\r\n",
+        MessageOutput.printf("[PowerMeters::Udp::SmaHM] Unhandled group 0x%04x with length %d\r\n",
                 grouptag, grouplen);
         offset += grouplen;
     } while (grouplen > 0 && offset + 4 < buffer + rSize);
 }
+
+} // namespace PowerMeters::Udp::SmaHM

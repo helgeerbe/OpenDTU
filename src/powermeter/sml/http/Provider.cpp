@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#include "PowerMeterHttpSml.h"
-#include "MessageOutput.h"
+#include <powermeter/sml/http/Provider.h>
+#include <MessageOutput.h>
 #include <WiFiClientSecure.h>
 #include <base64.h>
 #include <ESPmDNS.h>
 
-PowerMeterHttpSml::~PowerMeterHttpSml()
+namespace PowerMeters::Sml::Http {
+
+Provider::~Provider()
 {
     _taskDone = false;
 
@@ -21,21 +23,21 @@ PowerMeterHttpSml::~PowerMeterHttpSml()
     }
 }
 
-bool PowerMeterHttpSml::init()
+bool Provider::init()
 {
     _upHttpGetter = std::make_unique<HttpGetter>(_cfg.HttpRequest);
 
     if (_upHttpGetter->init()) { return true; }
 
-    MessageOutput.printf("[PowerMeterHttpSml] Initializing HTTP getter failed:\r\n");
-    MessageOutput.printf("[PowerMeterHttpSml] %s\r\n", _upHttpGetter->getErrorText());
+    MessageOutput.printf("[PowerMeters::Sml::Http] Initializing HTTP getter failed:\r\n");
+    MessageOutput.printf("[PowerMeters::Sml::Http] %s\r\n", _upHttpGetter->getErrorText());
 
     _upHttpGetter = nullptr;
 
     return false;
 }
 
-void PowerMeterHttpSml::loop()
+void Provider::loop()
 {
     if (_taskHandle != nullptr) { return; }
 
@@ -44,19 +46,19 @@ void PowerMeterHttpSml::loop()
     lock.unlock();
 
     uint32_t constexpr stackSize = 3072;
-    xTaskCreate(PowerMeterHttpSml::pollingLoopHelper, "PM:HTTP+SML",
+    xTaskCreate(Provider::pollingLoopHelper, "PM:HTTP+SML",
             stackSize, this, 1/*prio*/, &_taskHandle);
 }
 
-void PowerMeterHttpSml::pollingLoopHelper(void* context)
+void Provider::pollingLoopHelper(void* context)
 {
-    auto pInstance = static_cast<PowerMeterHttpSml*>(context);
+    auto pInstance = static_cast<Provider*>(context);
     pInstance->pollingLoop();
     pInstance->_taskDone = true;
     vTaskDelete(nullptr);
 }
 
-void PowerMeterHttpSml::pollingLoop()
+void Provider::pollingLoop()
 {
     std::unique_lock<std::mutex> lock(_pollingMutex);
 
@@ -77,7 +79,7 @@ void PowerMeterHttpSml::pollingLoop()
         lock.lock();
 
         if (!res.isEmpty()) {
-            MessageOutput.printf("[PowerMeterHttpSml] %s\r\n", res.c_str());
+            MessageOutput.printf("[PowerMeters::Sml::Http] %s\r\n", res.c_str());
             continue;
         }
 
@@ -85,13 +87,13 @@ void PowerMeterHttpSml::pollingLoop()
     }
 }
 
-bool PowerMeterHttpSml::isDataValid() const
+bool Provider::isDataValid() const
 {
     uint32_t age = millis() - getLastUpdate();
     return getLastUpdate() > 0 && (age < (3 * _cfg.PollingInterval * 1000));
 }
 
-String PowerMeterHttpSml::poll()
+String Provider::poll()
 {
     if (!_upHttpGetter) {
         return "Initialization of HTTP request failed";
@@ -111,7 +113,9 @@ String PowerMeterHttpSml::poll()
         processSmlByte(pStream->read());
     }
 
-    PowerMeterSml::reset();
+    ::PowerMeters::Sml::Provider::reset();
 
     return "";
 }
+
+} // namespace PowerMeters::Sml::Http

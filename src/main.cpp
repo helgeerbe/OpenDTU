@@ -29,7 +29,7 @@
 #include "SunPosition.h"
 #include "Utils.h"
 #include "WebApi.h"
-#include "PowerMeter.h"
+#include <powermeter/Controller.h>
 #include "PowerLimiter.h"
 #include "defaults.h"
 #include <solarcharger/Controller.h>

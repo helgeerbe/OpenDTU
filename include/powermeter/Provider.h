@@ -4,9 +4,11 @@
 #include <atomic>
 #include "Configuration.h"
 
-class PowerMeterProvider {
+namespace PowerMeters {
+
+class Provider {
 public:
-    virtual ~PowerMeterProvider() { }
+    virtual ~Provider() { }
 
     enum class Type : unsigned {
         MQTT = 0,
@@ -29,7 +31,7 @@ public:
     void mqttLoop() const;
 
 protected:
-    PowerMeterProvider() {
+    Provider() {
         auto const& config = Configuration.get();
         _verboseLogging = config.PowerMeter.VerboseLogging;
     }
@@ -49,3 +51,5 @@ private:
 
     mutable uint32_t _lastMqttPublish = 0;
 };
+
+} // namespace PowerMeters

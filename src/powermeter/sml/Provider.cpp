@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#include "PowerMeterSml.h"
-#include "MessageOutput.h"
+#include <powermeter/sml/Provider.h>
+#include <MessageOutput.h>
 
-float PowerMeterSml::getPowerTotal() const
+namespace PowerMeters::Sml {
+
+float Provider::getPowerTotal() const
 {
     std::lock_guard<std::mutex> l(_mutex);
     if (_values.activePowerTotal.has_value()) { return *_values.activePowerTotal; }
     return 0;
 }
 
-void PowerMeterSml::doMqttPublish() const
+void Provider::doMqttPublish() const
 {
 #define PUB(t, m) \
     if (_values.m.has_value()) { mqttPublish(t, *_values.m); }
@@ -30,13 +32,13 @@ void PowerMeterSml::doMqttPublish() const
 #undef PUB
 }
 
-void PowerMeterSml::reset()
+void Provider::reset()
 {
     smlReset();
     _cache = { std::nullopt };
 }
 
-void PowerMeterSml::processSmlByte(uint8_t byte)
+void Provider::processSmlByte(uint8_t byte)
 {
     switch (smlState(byte)) {
         case SML_LISTEND:
@@ -71,3 +73,5 @@ void PowerMeterSml::processSmlByte(uint8_t byte)
             break;
     }
 }
+
+} // namespace PowerMeters::Sml

@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 
-#include "Configuration.h"
-#include "PowerMeterProvider.h"
+#include <Configuration.h>
+#include <powermeter/Provider.h>
 #include <espMqttClient.h>
 #include <vector>
 #include <mutex>
 #include <array>
 
-class PowerMeterMqtt : public PowerMeterProvider {
+namespace PowerMeters::Mqtt {
+
+class Provider : public ::PowerMeters::Provider {
 public:
-    explicit PowerMeterMqtt(PowerMeterMqttConfig const& cfg)
+    explicit Provider(PowerMeterMqttConfig const& cfg)
         : _cfg(cfg) { }
 
-    ~PowerMeterMqtt();
+    ~Provider();
 
     bool init() final;
     void loop() final { }
@@ -37,3 +39,5 @@ private:
 
     mutable std::mutex _mutex;
 };
+
+} // namespace PowerMeters::Mqtt

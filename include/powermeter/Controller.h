@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 
-#include "PowerMeterProvider.h"
+#include <powermeter/Provider.h>
 #include <TaskSchedulerDeclarations.h>
 #include <memory>
 #include <mutex>
 
-class PowerMeterClass {
+namespace PowerMeters {
+
+class Controller {
 public:
     void init(Scheduler& scheduler);
 
@@ -21,7 +23,9 @@ private:
 
     Task _loopTask;
     mutable std::mutex _mutex;
-    std::unique_ptr<PowerMeterProvider> _upProvider = nullptr;
+    std::unique_ptr<Provider> _upProvider = nullptr;
 };
 
-extern PowerMeterClass PowerMeter;
+} // namespace PowerMeters
+
+extern PowerMeters::Controller PowerMeter;
