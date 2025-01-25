@@ -83,12 +83,42 @@ protected:
     template<typename T>
     static void addLiveViewInSection(JsonVariant& root,
         std::string const& section, std::string const& name,
-        T&& value, std::string const& unit, uint8_t precision)
+        T&& value, std::string const& unit, uint8_t precision, bool dummy = true)
     {
         auto jsonValue = root["values"][section][name];
         jsonValue["v"] = value;
         jsonValue["u"] = unit;
         jsonValue["d"] = precision;
+    }
+
+    template<typename T>
+    static void addLiveViewInSection(JsonVariant& root,
+        std::string const& section, std::string const& name,
+        const std::optional<T>& value, std::string const& unit, uint8_t precision, bool hideMissing = false)
+    {
+        if (value.has_value()) {
+            addLiveViewInSection(root, section, name, *value, unit, precision);
+        }else if (!hideMissing) {
+            addLiveViewTextInSection(root, section, name, "unavail", true);
+        }
+    }
+
+    static void addLiveViewBooleanInSection(JsonVariant& root,
+        std::string const& section, std::string const& name,
+        bool value, bool translate = true, bool dummy = true)
+    {
+        addLiveViewTextInSection(root, section, name, value ? "enabled" : "disabled");
+    }
+
+    static void addLiveViewBooleanInSection(JsonVariant& root,
+        std::string const& section, std::string const& name,
+        std::optional<bool> value, bool translate = true, bool hideMissing = true)
+    {
+        if (value.has_value()) {
+            addLiveViewBooleanInSection(root, section, name, *value, translate);
+        }else if (!hideMissing) {
+            addLiveViewTextInSection(root, section, name, "unavail", true);
+        }
     }
 
     template<typename T>

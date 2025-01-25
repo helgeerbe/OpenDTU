@@ -50,6 +50,8 @@
 #define POWERMETER_HTTP_JSON_MAX_PATH_STRLEN 256
 #define BATTERY_JSON_MAX_PATH_STRLEN 128
 
+#define ZENDURE_MAX_SERIAL_STRLEN 8
+
 struct CHANNEL_CONFIG_T {
     uint16_t MaxChannelPower;
     char Name[CHAN_MAX_NAME_STRLEN];
@@ -174,6 +176,8 @@ enum BatteryVoltageUnit { Volts = 0, DeciVolts = 1, CentiVolts = 2, MilliVolts =
 
 enum BatteryAmperageUnit { Amps = 0, MilliAmps = 1 };
 
+enum ZendureBatteryOutputControl { ControlNone = 0, ControlFixed = 1, ControlSchedule = 2 };
+
 struct BATTERY_CONFIG_T {
     bool Enabled;
     bool VerboseLogging;
@@ -193,6 +197,22 @@ struct BATTERY_CONFIG_T {
     char MqttDischargeCurrentTopic[MQTT_MAX_TOPIC_STRLEN + 1];
     char MqttDischargeCurrentJsonPath[BATTERY_JSON_MAX_PATH_STRLEN + 1];
     BatteryAmperageUnit MqttAmperageUnit;
+    uint8_t ZendureDeviceType;
+    char ZendureDeviceId[ZENDURE_MAX_SERIAL_STRLEN + 1];
+    uint8_t ZendurePollingInterval;
+    uint8_t ZendureMinSoC;
+    uint8_t ZendureMaxSoC;
+    uint8_t ZendureBypassMode;
+    uint16_t ZendureMaxOutput;
+    bool ZendureAutoShutdown;
+    uint16_t ZendureOutputLimit;
+    ZendureBatteryOutputControl ZendureOutputControl;
+    int16_t ZendureSunriseOffset;
+    int16_t ZendureSunsetOffset;
+    uint16_t ZendureOutputLimitDay;
+    uint16_t ZendureOutputLimitNight;
+    bool ZendureChargeThroughEnable;
+    uint16_t ZendureChargeThroughInterval;
 };
 using BatteryConfig = struct BATTERY_CONFIG_T;
 
