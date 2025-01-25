@@ -7,6 +7,7 @@
 #include <battery/pytes/Provider.h>
 #include <battery/sbs/Provider.h>
 #include <battery/victronsmartshunt/Provider.h>
+#include <battery/zendure/Provider.h>
 #include <Configuration.h>
 #include <MessageOutput.h>
 #include <MqttSettings.h>
@@ -72,6 +73,9 @@ void Controller::updateSettings()
             break;
         case 6:
             _upProvider = std::make_unique<JbdBms::Provider>();
+            break;
+        case 7:
+            _upProvider = std::make_unique<Zendure::Provider>();
             break;
         default:
             MessageOutput.printf("[Battery] Unknown provider: %d\r\n", config.Battery.Provider);

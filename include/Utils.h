@@ -23,4 +23,9 @@ public:
     template <typename T>
     static std::optional<T> getNumericValueFromMqttPayload(char const* client,
             std::string const& src, char const* topic, char const* jsonPath);
+
+    template<typename T>
+    static std::optional<T> getJsonElement(JsonObjectConst root, char const* key, size_t nesting = 0);
+
+    static bool getEpoch(time_t* epoch, uint32_t ms);
 };

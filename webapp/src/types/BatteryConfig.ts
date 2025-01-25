@@ -17,4 +17,20 @@ export interface BatteryConfig {
     mqtt_discharge_current_topic: string;
     mqtt_discharge_current_json_path: string;
     mqtt_amperage_unit: number;
+    zendure_device_type: number;
+    zendure_device_id: string;
+    zendure_polling_interval: number;
+    zendure_soc_min: number;
+    zendure_soc_max: number;
+    zendure_bypass_mode: number;
+    zendure_max_output: number;
+    zendure_auto_shutdown: boolean;
+    zendure_output_limit: number;
+    zendure_output_control: number;
+    zendure_output_limit_day: number;
+    zendure_output_limit_night: number;
+    zendure_sunrise_offset: number;
+    zendure_sunset_offset: number;
+    zendure_charge_through_enable: boolean;
+    zendure_charge_through_interval: number;
 }
