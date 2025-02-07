@@ -45,6 +45,9 @@ void WebApiWsConsoleClass::reload()
 
 void WebApiWsConsoleClass::wsCleanupTaskCb()
 {
-    // see: https://github.com/me-no-dev/ESPAsyncWebServer#limiting-the-number-of-web-socket-clients
-    _ws.cleanupClients();
+    // see: https://github.com/ESP32Async/ESPAsyncWebServer#limiting-the-number-of-web-socket-clients
+    // calling this function without an argument will use a default maximum
+    // number of clients to keep. since the web console is using quite a lot
+    // of memory, we only permit two clients at the same time.
+    _ws.cleanupClients(2);
 }

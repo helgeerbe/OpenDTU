@@ -109,7 +109,7 @@ void MessageOutputClass::loop()
         return;
     }
 
-    while (!_lines.empty() && _ws->availableForWriteAll()) {
+    while (!_lines.empty()) {
         Syslog.write(_lines.front().data(), _lines.front().size());
         _ws->textAll(std::make_shared<message_t>(std::move(_lines.front())));
         _lines.pop();
