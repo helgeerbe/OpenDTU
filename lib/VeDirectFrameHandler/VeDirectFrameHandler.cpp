@@ -57,7 +57,9 @@ VeDirectFrameHandler<T>::VeDirectFrameHandler() :
 	_name(""),
 	_value(""),
 	_debugIn(0),
-	_lastByteMillis(0)
+	_lastByteMillis(0),
+    _dataValid(false),
+    _startUpPassed(false)
 {
 }
 
@@ -74,6 +76,8 @@ void VeDirectFrameHandler<T>::init(char const* who, int8_t rx, int8_t tx,
 	_msgOut = msgOut;
 	_verboseLogging = verboseLogging;
 	_debugIn = 0;
+    _startUpPassed = false; // to obtain a complete dataset after a new start or restart
+    _dataValid = false;     // data is not valid on start or restart
 	snprintf(_logId, sizeof(_logId), "[VE.Direct %s %d/%d]", who, rx, tx);
 	if (_verboseLogging) { _msgOut->printf("%s init complete\r\n", _logId); }
 }
@@ -208,10 +212,24 @@ void VeDirectFrameHandler<T>::rxData(uint8_t inbyte)
 	{
 		if (_verboseLogging) { dumpDebugBuffer(); }
 		if (_checksum == 0) {
+
+            _frameContainsFieldV = false;
 			for (auto const& event : _textData) {
 				processTextData(event.first, event.second);
 			}
-			_lastUpdate = millis();
+
+            // A dataset can be fragmented across multiple frames,
+            // so we give just frames containing the field-label "V" a timestamp to avoid
+            // multible timestamps on related data. We also take care to have a complete dataset from
+            // multible frames after a start or restart or fault before we set the data as valid.
+            // Note: At startup, it may take up to 2 seconds for the first timestamp to be available
+            if (_frameContainsFieldV) {
+                if (_startUpPassed) {
+                    _lastUpdate = millis();
+                    _dataValid = true;
+                }
+                _startUpPassed = true;
+            }
 			frameValidEvent();
 		}
 		else {
@@ -263,6 +281,7 @@ void VeDirectFrameHandler<T>::processTextData(std::string const& name, std::stri
 
 	if (name == "V") {
 		_tmpFrame.batteryVoltage_V_mV = atol(value.c_str());
+        _frameContainsFieldV = true; // frame contains the field-label "V"
 		return;
 	}
 
@@ -315,15 +334,22 @@ typename VeDirectFrameHandler<T>::State VeDirectFrameHandler<T>::hexRxEvent(uint
 	return ret;
 }
 
+
+// Returns true if the dataset is valid and not older than 10 seconds
 template<typename T>
-bool VeDirectFrameHandler<T>::isDataValid() const
+bool VeDirectFrameHandler<T>::isDataValid()
 {
-	// VE.Direct text frame data is valid if we receive a device serialnumber and
-	// the data is not older as 10 seconds
-	// we accept a glitch where the data is valid for ten seconds when serialNr_SER != "" and (millis() - _lastUpdate) overflows
-	return strlen(_tmpFrame.serialNr_SER) > 0 && (millis() - _lastUpdate) < (10 * 1000);
+    // if the data is older than 10 seconds, it is no longer valid (millis() rollover safe)
+    if (_dataValid && (millis() - _lastUpdate > (10 * 1000))) {
+        _dataValid = false;     // data is outdated
+        _startUpPassed = false; // reset the start-up condition
+    }
+
+	return _dataValid;
 }
 
+// Returns the millis() timestamp of the last successfully received dataset
+// Note: Be aware of millis() rollover every 49 days
 template<typename T>
 uint32_t VeDirectFrameHandler<T>::getLastUpdate() const
 {
