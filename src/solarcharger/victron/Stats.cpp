@@ -78,7 +78,7 @@ std::optional<uint16_t> Stats::getPanelPowerWatts() const
         // requests, we should have the "network total DC input power" available.
         auto networkPower = entry.second->NetworkTotalDcInputPowerMilliWatts;
         if (networkPower.first > 0) {
-            return static_cast<int32_t>(networkPower.second / 1000.0);
+            return static_cast<uint16_t>(networkPower.second / 1000.0);
         }
 
         sum += entry.second->panelPower_PPV_W;
@@ -99,6 +99,7 @@ std::optional<float> Stats::getYieldTotal() const
         sum += entry.second->yieldTotal_H19_Wh / 1000.0;
     }
 
+    if (0 == sum) { return std::nullopt; }
     return sum;
 }
 
@@ -112,6 +113,7 @@ std::optional<float> Stats::getYieldDay() const
         sum += entry.second->yieldToday_H20_Wh;
     }
 
+    if (0 == sum) { return std::nullopt; }
     return sum;
 }
 
@@ -123,7 +125,6 @@ std::optional<Stats::StateOfOperation> Stats::getStateOfOperation() const
         switch (entry.second->currentState_CS) {
             case 0: return Stats::StateOfOperation::Off;
             case 3: return Stats::StateOfOperation::Bulk;
-            case 246:
             case 4: return Stats::StateOfOperation::Absorption;
             case 5: return Stats::StateOfOperation::Float;
             default: return Stats::StateOfOperation::Various;
