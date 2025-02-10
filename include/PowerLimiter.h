@@ -52,7 +52,10 @@ public:
     void setMode(Mode m) { _mode = m; }
     Mode getMode() const { return _mode; }
     bool usesBatteryPoweredInverter();
-    bool isGovernedInverterProducing();
+    bool usesSmartBufferPoweredInverter();
+
+    // used to interlock Huawei R48xx grid charger against battery-powered inverters
+    bool isGovernedBatteryPoweredInverterProducing();
 
 private:
     void loop();
@@ -83,7 +86,7 @@ private:
     std::pair<float, char const*> getInverterDcVoltage();
     float getBatteryVoltage(bool log = false);
     uint16_t dcPowerBusToInverterAc(uint16_t dcPower);
-    void fullSolarPassthrough(PowerLimiterClass::Status reason);
+    void unconditionalFullSolarPassthrough();
     int16_t calcConsumption();
     using inverter_filter_t = std::function<bool(PowerLimiterInverter const&)>;
     uint16_t updateInverterLimits(uint16_t powerRequested, inverter_filter_t filter, std::string const& filterExpression);
@@ -102,6 +105,7 @@ private:
     bool isStopThresholdReached();
     bool isBelowStopThreshold();
     void calcNextInverterRestart();
+    bool isSolarPassThroughEnabled();
     bool isFullSolarPassthroughActive();
 };
 

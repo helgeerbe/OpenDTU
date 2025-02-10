@@ -10,7 +10,7 @@
 
 #define CONFIG_FILENAME "/config.json"
 #define CONFIG_VERSION 0x00011d00 // 0.1.29 // make sure to clean all after change
-#define CONFIG_VERSION_ONBATTERY 4
+#define CONFIG_VERSION_ONBATTERY 5
 
 #define WIFI_MAX_SSID_STRLEN 32
 #define WIFI_MAX_PASSWORD_STRLEN 64
@@ -136,11 +136,13 @@ struct POWERLIMITER_INVERTER_CONFIG_T {
     uint64_t Serial;
     bool IsGoverned;
     bool IsBehindPowerMeter;
-    bool IsSolarPowered;
     bool UseOverscaling;
     uint16_t LowerPowerLimit;
     uint16_t UpperPowerLimit;
     uint8_t ScalingThreshold;
+
+    enum InverterPowerSource { Battery = 0, Solar = 1, SmartBuffer = 2 };
+    InverterPowerSource PowerSource;
 };
 using PowerLimiterInverterConfig = struct POWERLIMITER_INVERTER_CONFIG_T;
 

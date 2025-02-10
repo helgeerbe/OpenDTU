@@ -3,17 +3,23 @@
 #include "PowerLimiterInverter.h"
 #include "PowerLimiterBatteryInverter.h"
 #include "PowerLimiterSolarInverter.h"
+#include "PowerLimiterSmartBufferInverter.h"
 
 std::unique_ptr<PowerLimiterInverter> PowerLimiterInverter::create(
         bool verboseLogging, PowerLimiterInverterConfig const& config)
 {
     std::unique_ptr<PowerLimiterInverter> upInverter;
 
-    if (config.IsSolarPowered) {
-        upInverter = std::make_unique<PowerLimiterSolarInverter>(verboseLogging, config);
-    }
-    else {
-        upInverter = std::make_unique<PowerLimiterBatteryInverter>(verboseLogging, config);
+    switch (config.PowerSource) {
+        case PowerLimiterInverterConfig::InverterPowerSource::Battery:
+            upInverter = std::make_unique<PowerLimiterBatteryInverter>(verboseLogging, config);
+            break;
+        case PowerLimiterInverterConfig::InverterPowerSource::Solar:
+            upInverter = std::make_unique<PowerLimiterSolarInverter>(verboseLogging, config);
+            break;
+        case PowerLimiterInverterConfig::InverterPowerSource::SmartBuffer:
+            upInverter = std::make_unique<PowerLimiterSmartBufferInverter>(verboseLogging, config);
+            break;
     }
 
     if (nullptr == upInverter->_spInverter) { return nullptr; }
@@ -336,7 +342,7 @@ void PowerLimiterInverter::debug() const
         "    max reduction production/standby: %d/%d W, max increase: %d W\r\n"
         "    target limit/output/state: %i W (%s)/%d W/%s, %d update timeouts\r\n",
         _logPrefix,
-        (isSolarPowered()?"solar":"battery"),
+        (isSmartBufferPowered()?"smart-buffer":(isSolarPowered()?"solar":"battery")),
         (isProducing()?"producing":"standing by at"), getCurrentOutputAcWatts(),
         _config.LowerPowerLimit, getCurrentLimitWatts(), _config.UpperPowerLimit,
         getInverterMaxPowerWatts(),

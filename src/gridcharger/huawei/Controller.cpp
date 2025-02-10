@@ -192,7 +192,7 @@ void Controller::loop()
             _autoPowerEnabledCounter = 10;
         }
 
-        if (PowerLimiter.isGovernedInverterProducing()) {
+        if (PowerLimiter.isGovernedBatteryPoweredInverterProducing()) {
             _setParameter(0.0, Setting::OnlineCurrent);
             // Don't run auto mode for a second now. Otherwise we may send too much over the CAN bus
             _autoModeBlockedTillMillis = millis() + 1000;

@@ -736,7 +736,6 @@
         "ScalingPowerThreshold": "Overscaling input power threshold",
         "ScalingPowerThresholdHint": "Set the minimum power input threshold (%). Inputs below this percentage are considered shaded/unused.",
         "InverterIsBehindPowerMeterHint": "Enable this option if the power meter reading is reduced by the inverter's output when it produces power. This is typically true.",
-        "InverterIsSolarPowered": "Inverter is powered by solar modules",
         "UseOverscaling": "Compensate shaded or unused inputs",
         "UseOverscalingHint": "Allow to overscale the inverter limit to compensate for unused inputs or shading of one or multiple inputs.",
         "VoltageThresholds": "Battery Voltage Thresholds",

@@ -26,7 +26,7 @@ export interface PowerLimiterInverterConfig {
     serial: string;
     is_governed: boolean;
     is_behind_power_meter: boolean;
-    is_solar_powered: boolean;
+    power_source: number;
     use_overscaling_to_compensate_shading: boolean;
     lower_power_limit: number;
     upper_power_limit: number;

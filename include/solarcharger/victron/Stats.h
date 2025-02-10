@@ -16,6 +16,9 @@ public:
     std::optional<uint16_t> getPanelPowerWatts() const final;
     std::optional<float> getYieldTotal() const final;
     std::optional<float> getYieldDay() const final;
+    std::optional<StateOfOperation> getStateOfOperation() const final;
+    std::optional<float> getFloatVoltage() const final;
+    std::optional<float> getAbsorptionVoltage() const final;
 
     void getLiveViewData(JsonVariant& root, const boolean fullUpdate, const uint32_t lastPublish) const final;
     void mqttPublish() const final;

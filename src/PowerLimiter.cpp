@@ -19,7 +19,7 @@
 #include "SunPosition.h"
 
 static auto sBatteryPoweredFilter = [](PowerLimiterInverter const& inv) {
-    return !inv.isSolarPowered();
+    return inv.isBatteryPowered();
 };
 
 static const char sBatteryPoweredExpression[] = "battery-powered";
@@ -29,6 +29,12 @@ static auto sSolarPoweredFilter = [](PowerLimiterInverter const& inv) {
 };
 
 static const char sSolarPoweredExpression[] = "solar-powered";
+
+static auto sSmartBufferPoweredFilter = [](PowerLimiterInverter const& inv) {
+    return inv.isSmartBufferPowered();
+};
+
+static const char sSmartBufferPoweredExpression[] = "smart-buffer-powered";
 
 PowerLimiterClass PowerLimiter;
 
@@ -203,7 +209,7 @@ void PowerLimiterClass::loop()
     // calculation at all after surviving the loop above, which ensures that we
     // have inverter stats more recent than their respective last update command
     if (Mode::UnconditionalFullSolarPassthrough == _mode) {
-        return fullSolarPassthrough(Status::UnconditionalSolarPassthrough);
+        return unconditionalFullSolarPassthrough();
     }
 
     // if the power meter is being used, i.e., if its data is valid, we want to
@@ -282,13 +288,15 @@ void PowerLimiterClass::loop()
     // re-calculate load-corrected voltage once (and only once) per DPL loop
     _oLoadCorrectedVoltage = std::nullopt;
 
-    if (_verboseLogging && usesBatteryPoweredInverter()) {
+    if (_verboseLogging && (usesBatteryPoweredInverter() || usesSmartBufferPoweredInverter())) {
         MessageOutput.printf("[DPL] up %lu s, %snext inverter restart at %d s (set to %d)\r\n",
                 millis()/1000,
                 (_nextInverterRestart.first?"":"NO "),
                 _nextInverterRestart.second/1000,
                 config.PowerLimiter.RestartHour);
+    }
 
+    if (_verboseLogging && usesBatteryPoweredInverter()) {
         MessageOutput.printf("[DPL] battery interface %sabled, SoC %.1f %% (%s), age %u s (%s)\r\n",
                 (config.Battery.Enabled?"en":"dis"),
                 Battery.getStats()->getSoC(),
@@ -309,7 +317,7 @@ void PowerLimiterClass::loop()
                 config.PowerLimiter.VoltageStopThreshold,
                 config.PowerLimiter.BatterySocStopThreshold);
 
-        if (config.SolarCharger.Enabled && config.PowerLimiter.SolarPassThroughEnabled) {
+        if (isSolarPassThroughEnabled()) {
             MessageOutput.printf("[DPL] full solar-passthrough %s, start %.2f V or %u %%, stop %.2f V\r\n",
                     (isFullSolarPassthroughActive()?"active":"dormant"),
                     config.PowerLimiter.FullSolarPassThroughStartVoltage,
@@ -320,7 +328,7 @@ void PowerLimiterClass::loop()
         MessageOutput.printf("[DPL] start %sreached, stop %sreached, solar-passthrough %sabled, use at night %sabled and %s\r\n",
                 (isStartThresholdReached()?"":"NOT "),
                 (isStopThresholdReached()?"":"NOT "),
-                (config.PowerLimiter.SolarPassThroughEnabled?"en":"dis"),
+                (isSolarPassThroughEnabled()?"en":"dis"),
                 (config.PowerLimiter.BatteryAlwaysUseAtNight?"en":"dis"),
                 (_nighttimeDischarging?"active":"dormant"));
 
@@ -339,8 +347,10 @@ void PowerLimiterClass::loop()
     inverterTotalPower = std::min(inverterTotalPower, totalAllowance);
 
     auto coveredBySolar = updateInverterLimits(inverterTotalPower, sSolarPoweredFilter, sSolarPoweredExpression);
-    auto remaining = (inverterTotalPower >= coveredBySolar) ? inverterTotalPower - coveredBySolar : 0;
-    auto powerBusUsage = calcPowerBusUsage(remaining);
+    auto remainingAfterSolar = (inverterTotalPower >= coveredBySolar) ? inverterTotalPower - coveredBySolar : 0;
+    auto coveredBySmartBuffer = updateInverterLimits(remainingAfterSolar, sSmartBufferPoweredFilter, sSmartBufferPoweredExpression);
+    auto remainingAfterSmartBuffer = (remainingAfterSolar >= coveredBySmartBuffer) ? remainingAfterSolar - coveredBySmartBuffer : 0;
+    auto powerBusUsage = calcPowerBusUsage(remainingAfterSmartBuffer);
     auto coveredByBattery = updateInverterLimits(powerBusUsage, sBatteryPoweredFilter, sBatteryPoweredExpression);
 
     if (_verboseLogging) {
@@ -438,18 +448,18 @@ uint16_t PowerLimiterClass::dcPowerBusToInverterAc(uint16_t dcPower)
 }
 
 /**
- * implements the "full solar passthrough" mode of operation. in this mode of
+ * implements the "uncoditional full solar passthrough" mode of operation. in this mode of
  * operation, the inverters shall behave as if they were connected to the solar
  * panels directly, i.e., all solar power (and only solar power) is converted
  * to AC power, independent from the power meter reading.
  */
-void PowerLimiterClass::fullSolarPassthrough(PowerLimiterClass::Status reason)
+void PowerLimiterClass::unconditionalFullSolarPassthrough()
 {
     if ((millis() - _lastCalculation) < _calculationBackoffMs) { return; }
     _lastCalculation = millis();
 
     for (auto& upInv : _inverters) {
-        if (upInv->isSolarPowered()) { upInv->setMaxOutput(); }
+        if (!upInv->isBatteryPowered()) { upInv->setMaxOutput(); }
     }
 
     uint16_t targetOutput = 0;
@@ -462,7 +472,7 @@ void PowerLimiterClass::fullSolarPassthrough(PowerLimiterClass::Status reason)
 
     _calculationBackoffMs = 1 * 1000;
     updateInverterLimits(targetOutput, sBatteryPoweredFilter, sBatteryPoweredExpression);
-    return announceStatus(reason);
+    return announceStatus(Status::UnconditionalSolarPassthrough);
 }
 
 uint8_t PowerLimiterClass::getInverterUpdateTimeouts() const
@@ -566,6 +576,8 @@ uint16_t PowerLimiterClass::updateInverterLimits(uint16_t powerRequested,
         matchingInverters.push_back(upInv.get());
     }
 
+    if (matchingInverters.empty()) { return 0; }
+
     int32_t diff = powerRequested - producing;
 
     auto const& config = Configuration.get();
@@ -578,8 +590,6 @@ uint16_t PowerLimiterClass::updateInverterLimits(uint16_t powerRequested,
                 powerRequested, matchingInverters.size(), filterExpression.c_str(),
                 (plural?"s":""), producing, diff, hysteresis);
     }
-
-    if (matchingInverters.empty()) { return 0; }
 
     if (std::abs(diff) < static_cast<int32_t>(hysteresis)) { return producing; }
 
@@ -704,11 +714,9 @@ bool PowerLimiterClass::updateInverters()
 
 uint16_t PowerLimiterClass::getSolarPassthroughPower()
 {
-    auto const& config = Configuration.get();
     auto solarChargerOutput = SolarCharger.getStats()->getOutputPowerWatts();
 
-    if (!config.SolarCharger.Enabled
-            || !config.PowerLimiter.SolarPassThroughEnabled
+    if (!isSolarPassThroughEnabled()
             || isBelowStopThreshold()
             || !solarChargerOutput
             ) {
@@ -723,7 +731,7 @@ float PowerLimiterClass::getBatteryInvertersOutputAcWatts()
     float res = 0;
 
     for (auto const& upInv : _inverters) {
-        if (upInv->isSolarPowered()) { continue; }
+        if (!upInv->isBatteryPowered()) { continue; }
         // TODO(schlimmchen): we must use the DC power instead, as the battery
         // voltage drops proportional to the DC current draw, but the AC power
         // output does not correlate with the battery current or voltage.
@@ -875,7 +883,7 @@ void PowerLimiterClass::calcNextInverterRestart()
     _nextInverterRestart = { true, restartMillis };
 }
 
-bool PowerLimiterClass::isFullSolarPassthroughActive()
+bool PowerLimiterClass::isSolarPassThroughEnabled()
 {
     auto const& config = Configuration.get();
 
@@ -885,8 +893,15 @@ bool PowerLimiterClass::isFullSolarPassthroughActive()
     // solarcharger is needed for solar passthrough
     if (!config.SolarCharger.Enabled) { return false; }
 
+    return config.PowerLimiter.SolarPassThroughEnabled;
+}
+
+bool PowerLimiterClass::isFullSolarPassthroughActive()
+{
+    auto const& config = Configuration.get();
+
     // We only do full solar PT if general solar PT is enabled
-    if (!config.PowerLimiter.SolarPassThroughEnabled) { return false; }
+    if (!isSolarPassThroughEnabled()) { return false; }
 
     if (testThreshold(config.PowerLimiter.FullSolarPassThroughSoc,
                       config.PowerLimiter.FullSolarPassThroughStartVoltage,
@@ -906,16 +921,25 @@ bool PowerLimiterClass::isFullSolarPassthroughActive()
 bool PowerLimiterClass::usesBatteryPoweredInverter()
 {
     for (auto const& upInv : _inverters) {
-        if (!upInv->isSolarPowered()) { return true; }
+        if (upInv->isBatteryPowered()) { return true; }
     }
 
     return false;
 }
 
-bool PowerLimiterClass::isGovernedInverterProducing()
+bool PowerLimiterClass::usesSmartBufferPoweredInverter()
 {
     for (auto const& upInv : _inverters) {
-        if (upInv->isProducing()) { return true; }
+        if (upInv->isSmartBufferPowered()) { return true; }
+    }
+
+    return false;
+}
+
+bool PowerLimiterClass::isGovernedBatteryPoweredInverterProducing()
+{
+    for (auto const& upInv : _inverters) {
+        if (upInv->isBatteryPowered() && upInv->isProducing()) { return true; }
     }
     return false;
 }

@@ -115,6 +115,47 @@ std::optional<float> Stats::getYieldDay() const
     return sum;
 }
 
+std::optional<Stats::StateOfOperation> Stats::getStateOfOperation() const
+{
+    for (auto const& entry : _data) {
+        if (!entry.second) { continue; }
+        // see victron protocol documentation for CS values
+        switch (entry.second->currentState_CS) {
+            case 0: return Stats::StateOfOperation::Off;
+            case 3: return Stats::StateOfOperation::Bulk;
+            case 246:
+            case 4: return Stats::StateOfOperation::Absorption;
+            case 5: return Stats::StateOfOperation::Float;
+            default: return Stats::StateOfOperation::Various;
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<float> Stats::getFloatVoltage() const
+{
+    for (auto const& entry : _data) {
+        if (!entry.second) { continue; }
+        auto voltage = entry.second->BatteryFloatMilliVolt;
+        if (voltage.first > 0) { // only return valid and not outdated value
+            return voltage.second / 1000.0;
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<float> Stats::getAbsorptionVoltage() const
+{
+    for (auto const& entry : _data) {
+        if (!entry.second) { continue; }
+        auto voltage = entry.second->BatteryAbsorptionMilliVolt;
+        if (voltage.first > 0) { // only return valid and not outdated value
+            return voltage.second / 1000.0;
+        }
+    }
+    return std::nullopt;
+}
+
 void Stats::getLiveViewData(JsonVariant& root, const boolean fullUpdate, const uint32_t lastPublish) const
 {
     ::SolarChargers::Stats::getLiveViewData(root, fullUpdate, lastPublish);

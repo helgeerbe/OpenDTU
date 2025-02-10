@@ -4,6 +4,7 @@
 ![GitHub tag (latest SemVer)](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/AndreasBoehm/856dda48c1cadac6ea495213340c612b/raw/openDTUcoreRelease.json)
 
 - [OpenDTU-OnBattery](#opendtu-onbattery)
+  - [About Hardware For Sale](#%EF%B8%8F--about-hardware-for-sale)
   - [Getting Started](#getting-started)
   - [Important Differences](#important-differences)
   - [Documentation](#documentation)
@@ -16,8 +17,54 @@
 OpenDTU-OnBattery is a fork of [OpenDTU](https://github.com/tbnobody/OpenDTU),
 which adds support for battery chargers, battery management systems (BMS), and
 power meters on a single ESP32. Its Dynamic Power Limiter can adjust the
-inverter's power production to the actual houshold consumption. In this way, it
-is possible to implement a zero export policy.
+power production of one or more solar- and/or battery-powered inverter(s) to
+the actual houshold consumption. In this way, it is possible to implement a
+zero export policy.
+
+## ⚠️  About Hardware For Sale
+
+### Do It Yourself
+
+You are always welcome to select and use your own set of parts to run
+OpenDTU-OnBattery. Our [documentation](https://opendtu-onbattery.net/hardware/)
+should give you the information you need. There are also [case
+designs](https://opendtu-onbattery.net/3rd_party/cases/) available for you to
+print yourself.
+
+### Ready-To-Use
+
+If you are interested in ready-to-use hardware available for sale, the
+OpenDTU-OnBattery project endorses the **[OpenDTU Fusion
+board](https://opendtu-onbattery.net/3rd_party/opendtu_fusion/)**.
+
+### Distribution Channels
+
+OpenDTU Fusion boards and accessories (cases in particular) are available
+exclusively through:
+
+- [AllianceApps](https://shop.allianceapps.io/)
+- [Semy3D](https://shop.semy3d.de/)
+
+Please note that we do not have any connections to hardware sold on platforms
+like eBay, Kleinanzeigen, or similar marketplaces. Items sold there may not
+meet the quality and compatibility standards expected by our community.
+
+### Why Purchase Through the Endorsed Channels?
+
+Buying from the trusted sources listed above ensures:
+
+1. Access to reliable, well-tested hardware that meets the project’s requirements.
+2. Support for suppliers who align with the values of the OpenDTU community.
+
+To allow for a good overall experience, we encourage users to avoid unverified
+hardware sources.
+
+### 🚨 Misleading Claims
+
+We are aware that some sellers falsely advertise that purchasing their hardware
+supports the OpenDTU-OnBattery, OpenDTU, and/or AhoyDTU developers financially.
+**This is not true.** The OpenDTU-OnBattery project does **not** receive any
+financial benefit from the sale of hardware.
 
 ## Getting Started
 

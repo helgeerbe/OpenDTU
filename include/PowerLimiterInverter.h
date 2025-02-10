@@ -68,7 +68,10 @@ public:
     uint64_t getSerial() const { return _config.Serial; }
     char const* getSerialStr() const { return _serialStr; }
     bool isBehindPowerMeter() const { return _config.IsBehindPowerMeter; }
-    virtual bool isSolarPowered() const = 0;
+
+    bool isBatteryPowered() const { return _config.PowerSource == PowerLimiterInverterConfig::InverterPowerSource::Battery; }
+    bool isSolarPowered() const { return _config.PowerSource == PowerLimiterInverterConfig::InverterPowerSource::Solar; }
+    bool isSmartBufferPowered() const { return _config.PowerSource == PowerLimiterInverterConfig::InverterPowerSource::SmartBuffer; }
 
     void debug() const;
 

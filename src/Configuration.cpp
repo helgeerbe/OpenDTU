@@ -181,7 +181,7 @@ void ConfigurationClass::serializePowerLimiterConfig(PowerLimiterConfig const& s
         t["serial"] = serialStr(s.Serial);
         t["is_governed"] = s.IsGoverned;
         t["is_behind_power_meter"] = s.IsBehindPowerMeter;
-        t["is_solar_powered"] = s.IsSolarPowered;
+        t["power_source"] = s.PowerSource;
         t["use_overscaling_to_compensate_shading"] = s.UseOverscaling;
         t["lower_power_limit"] = s.LowerPowerLimit;
         t["upper_power_limit"] = s.UpperPowerLimit;
@@ -521,7 +521,7 @@ void ConfigurationClass::deserializePowerLimiterConfig(JsonObject const& source,
         inv.Serial = serialBin(s["serial"] | String("0")); // 0 marks inverter slot as unused
         inv.IsGoverned = s["is_governed"] | false;
         inv.IsBehindPowerMeter = s["is_behind_power_meter"] | POWERLIMITER_IS_INVERTER_BEHIND_POWER_METER;
-        inv.IsSolarPowered = s["is_solar_powered"] | POWERLIMITER_IS_INVERTER_SOLAR_POWERED;
+        inv.PowerSource = s["power_source"] | PowerLimiterInverterConfig::InverterPowerSource::Battery;
         inv.UseOverscaling = s["use_overscaling_to_compensate_shading"] | POWERLIMITER_USE_OVERSCALING;
         inv.LowerPowerLimit = s["lower_power_limit"] | POWERLIMITER_LOWER_POWER_LIMIT;
         inv.UpperPowerLimit = s["upper_power_limit"] | POWERLIMITER_UPPER_POWER_LIMIT;
@@ -942,7 +942,13 @@ void ConfigurationClass::migrateOnBattery()
             config.PowerLimiter.InverterSerialForDcVoltage = previousInverterSerial;
             inv.IsGoverned = true;
             inv.IsBehindPowerMeter = powerlimiter["is_inverter_behind_powermeter"] | POWERLIMITER_IS_INVERTER_BEHIND_POWER_METER;
-            inv.IsSolarPowered = powerlimiter["is_inverter_solar_powered"] | POWERLIMITER_IS_INVERTER_SOLAR_POWERED;
+
+            if (powerlimiter["is_inverter_solar_powered"]) {
+                inv.PowerSource = PowerLimiterInverterConfig::InverterPowerSource::Solar;
+            } else {
+                inv.PowerSource = PowerLimiterInverterConfig::InverterPowerSource::Battery;
+            }
+
             inv.UseOverscaling = powerlimiter["use_overscaling_to_compensate_shading"] | POWERLIMITER_USE_OVERSCALING;
             inv.LowerPowerLimit = powerlimiter["lower_power_limit"] | POWERLIMITER_LOWER_POWER_LIMIT;
             inv.UpperPowerLimit = powerlimiter["upper_power_limit"] | POWERLIMITER_UPPER_POWER_LIMIT;
@@ -966,6 +972,21 @@ void ConfigurationClass::migrateOnBattery()
         config.SolarCharger.Enabled = vedirect["enabled"] | SOLAR_CHARGER_ENABLED;
         config.SolarCharger.VerboseLogging = vedirect["verbose_logging"] | SOLAR_CHARGER_VERBOSE_LOGGING;
         config.SolarCharger.PublishUpdatesOnly = vedirect["updates_only"] | SOLAR_CHARGER_PUBLISH_UPDATES_ONLY;
+    }
+
+    if (config.Cfg.VersionOnBattery < 5) {
+        JsonArray inverters = doc["powerlimiter"]["inverters"].as<JsonArray>();
+
+        for (size_t i = 0; i < INV_MAX_COUNT; ++i) {
+            PowerLimiterInverterConfig& inv = config.PowerLimiter.Inverters[i];
+            JsonObject s = inverters[i];
+
+            if (s["is_solar_powered"]) {
+                inv.PowerSource = PowerLimiterInverterConfig::InverterPowerSource::Solar;
+            } else {
+                inv.PowerSource = PowerLimiterInverterConfig::InverterPowerSource::Battery;
+            }
+        }
     }
 
     f.close();
