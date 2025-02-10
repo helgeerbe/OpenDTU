@@ -194,13 +194,26 @@
                 </h2>
             </CardElement>
         </div>
+        <div class="col" v-if="shellyData.enabled">
+            <CardElement centerContent textVariant="text-bg-success" :text="$t('invertertotalinfo.ShellyPower')">
+                <h2>
+                    {{
+                        $n(shellyData.Power.v, 'decimal', {
+                            minimumFractionDigits: shellyData.Power.d,
+                            maximumFractionDigits: shellyData.Power.d,
+                        })
+                    }}
+                    <small class="text-muted">{{ shellyData.Power.u }}</small>
+                </h2>
+            </CardElement>
+        </div>
     </div>
 </template>
 
 <script lang="ts">
 import BootstrapAlert from '@/components/BootstrapAlert.vue';
 import { BIconGear } from 'bootstrap-icons-vue';
-import type { Battery, Total, SolarCharger, Huawei, PowerMeter } from '@/types/LiveDataStatus';
+import type { Battery, Total, SolarCharger, Huawei, PowerMeter, Shelly } from '@/types/LiveDataStatus';
 import CardElement from './CardElement.vue';
 import { defineComponent, type PropType, useTemplateRef } from 'vue';
 
@@ -217,6 +230,7 @@ export default defineComponent({
         totalBattData: { type: Object as PropType<Battery>, required: true },
         powerMeterData: { type: Object as PropType<PowerMeter>, required: true },
         huaweiData: { type: Object as PropType<Huawei>, required: true },
+        shellyData: { type: Object as PropType<Shelly>, required: true },
     },
     data() {
         return {

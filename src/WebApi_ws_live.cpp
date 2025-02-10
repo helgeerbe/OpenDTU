@@ -13,6 +13,7 @@
 #include "defaults.h"
 #include <solarcharger/Controller.h>
 #include <AsyncJson.h>
+#include "ShellyACPlug.h"
 
 #ifndef PIN_MAPPING_REQUIRED
     #define PIN_MAPPING_REQUIRED 0
@@ -123,6 +124,16 @@ void WebApiWsLiveClass::generateOnBatteryJsonResponse(JsonVariant& root, bool al
         }
 
         if (!all) { _lastPublishHuawei = millis(); }
+    }
+
+    if (all || config.Shelly.Enabled ) {
+        auto shellyObj = root["shelly"].to<JsonObject>();
+        shellyObj["enabled"] = config.Shelly.Enabled;
+
+        if (config.Shelly.Enabled) {
+            addTotalField(shellyObj, "Power", ShellyACPlug._readpower, "W", 2);
+        }
+        if (!all) { _lastPublishShelly = millis(); }
     }
 
     auto spStats = Battery.getStats();

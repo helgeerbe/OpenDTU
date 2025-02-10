@@ -370,6 +370,21 @@ bool ConfigurationClass::write()
     JsonObject huawei = doc["huawei"].to<JsonObject>();
     serializeGridChargerConfig(config.Huawei, huawei);
 
+    JsonObject shelly = doc["shelly"].to<JsonObject>();
+    shelly["enabled"] = config.Shelly.Enabled;
+    shelly["verbose_logging"] = config.Shelly.VerboseLogging;
+    shelly["auto_power_batterysoc_limits_enabled"]= config.Shelly.Auto_Power_BatterySoC_Limits_Enabled ;
+    shelly["emergency_charge_enabled"]= config.Shelly.Emergency_Charge_Enabled;
+    shelly["stop_batterysoc_threshold"] = config.Shelly.stop_batterysoc_threshold;
+    shelly["start_batterysoc_threshold"] = config.Shelly.start_batterysoc_threshold;
+    shelly["url"] = config.Shelly.url;
+    shelly["uri_on"] = config.Shelly.uri_on;
+    shelly["uri_off"] = config.Shelly.uri_off;
+    shelly["uri_stats"] = config.Shelly.uri_stats;
+    shelly["uri_powerparam"] = config.Shelly.uri_powerparam;
+    shelly["power_on_threshold"] = config.Shelly.POWER_ON_threshold;
+    shelly["power_off_threshold"] = config.Shelly.POWER_OFF_threshold;
+
     if (!Utils::checkJsonAlloc(doc, __FUNCTION__, __LINE__)) {
         return false;
     }
@@ -747,6 +762,22 @@ bool ConfigurationClass::read()
     deserializeBatteryConfig(doc["battery"], config.Battery);
 
     deserializeGridChargerConfig(doc["huawei"], config.Huawei);
+
+    JsonObject shelly = doc["shelly"];
+    config.Shelly.Enabled = shelly["enabled"] | SHELLY_ENABLED;
+    config.Shelly.VerboseLogging = shelly["verbose_logging"] | VERBOSE_LOGGING;
+    config.Shelly.Auto_Power_BatterySoC_Limits_Enabled = shelly["auto_power_batterysoc_limits_enabled"] | false;
+    config.Shelly.Emergency_Charge_Enabled = shelly["emergency_charge_enabled"] | false;
+    config.Shelly.stop_batterysoc_threshold = shelly["stop_batterysoc_threshold"] | SHELLY_STOP_BATTERYSOC_THRESHOLD;
+    config.Shelly.start_batterysoc_threshold = shelly["start_batterysoc_threshold"] | SHELLY_START_BATTERYSOC_THRESHOLD;
+    strlcpy(config.Shelly.url, shelly["url"] | SHELLY_IPADDRESS, sizeof(config.Shelly.url));
+    strlcpy(config.Shelly.uri_on, shelly["uri_on"] | SHELLY_URION, sizeof(config.Shelly.uri_on));
+    strlcpy(config.Shelly.uri_off, shelly["uri_off"] | SHELLY_URIOFF, sizeof(config.Shelly.uri_off));
+    strlcpy(config.Shelly.uri_stats, shelly["uri_stats"] | SHELLY_URIOFF, sizeof(config.Shelly.uri_stats));
+    strlcpy(config.Shelly.uri_powerparam, shelly["uri_powerparam"] | SHELLY_URIOFF, sizeof(config.Shelly.uri_powerparam));
+    config.Shelly.POWER_ON_threshold = shelly["power_on_threshold"] | SHELLY_POWER_ON_THRESHOLD;
+    config.Shelly.POWER_OFF_threshold = shelly["power_off_threshold"] | SHELLY_POWER_OFF_THRESHOLD;
+
 
     f.close();
 

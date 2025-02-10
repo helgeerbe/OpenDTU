@@ -15,6 +15,7 @@
             :totalBattData="liveData.battery"
             :powerMeterData="liveData.power_meter"
             :huaweiData="liveData.huawei"
+            :shellyData="liveData.shelly"
         />
         <div class="row gy-3 mt-0">
             <div class="col-sm-3 col-md-2" :style="[inverterData.length == 1 ? { display: 'none' } : {}]">
@@ -716,12 +717,14 @@ export default defineComponent({
                 console.log(event);
                 if (event.data != '{}') {
                     const newData = JSON.parse(event.data);
-
                     if (typeof newData.solarcharger !== 'undefined') {
                         Object.assign(this.liveData.solarcharger, newData.solarcharger);
                     }
                     if (typeof newData.huawei !== 'undefined') {
                         Object.assign(this.liveData.huawei, newData.huawei);
+                    }
+                    if (typeof newData.shelly !== 'undefined') {
+                        Object.assign(this.liveData.shelly, newData.shelly);
                     }
                     if (typeof newData.battery !== 'undefined') {
                         Object.assign(this.liveData.battery, newData.battery);
@@ -729,7 +732,6 @@ export default defineComponent({
                     if (typeof newData.power_meter !== 'undefined') {
                         Object.assign(this.liveData.power_meter, newData.power_meter);
                     }
-
                     if (typeof newData.total === 'undefined') {
                         return;
                     }
