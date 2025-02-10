@@ -7,17 +7,19 @@
 #include <mutex>
 #include <stdint.h>
 #include <Arduino.h>
-#include "HttpGetter.h"
-#include "Configuration.h"
-#include "PowerMeterSml.h"
+#include <HttpGetter.h>
+#include <Configuration.h>
+#include <powermeter/sml/Provider.h>
 
-class PowerMeterHttpSml : public PowerMeterSml {
+namespace PowerMeters::Sml::Http {
+
+class Provider : public ::PowerMeters::Sml::Provider {
 public:
-    explicit PowerMeterHttpSml(PowerMeterHttpSmlConfig const& cfg)
-        : PowerMeterSml("PowerMeterHttpSml")
+    explicit Provider(PowerMeterHttpSmlConfig const& cfg)
+        : ::PowerMeters::Sml::Provider("PowerMeterHttpSml")
         , _cfg(cfg) { }
 
-    ~PowerMeterHttpSml();
+    ~Provider();
 
     bool init() final;
     void loop() final;
@@ -43,3 +45,5 @@ private:
     mutable std::mutex _pollingMutex;
     std::condition_variable _cv;
 };
+
+} // namespace PowerMeters::Sml::Http

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#include "PowerMeterSerialSdm.h"
-#include "PinMapping.h"
-#include "MessageOutput.h"
+#include <powermeter/sdm/serial/Provider.h>
+#include <PinMapping.h>
+#include <MessageOutput.h>
 
-PowerMeterSerialSdm::~PowerMeterSerialSdm()
+namespace PowerMeters::Sdm::Serial {
+
+Provider::~Provider()
 {
     _taskDone = false;
 
@@ -24,15 +26,15 @@ PowerMeterSerialSdm::~PowerMeterSerialSdm()
     }
 }
 
-bool PowerMeterSerialSdm::init()
+bool Provider::init()
 {
     const PinMapping_t& pin = PinMapping.get();
 
-    MessageOutput.printf("[PowerMeterSerialSdm] rx = %d, tx = %d, dere = %d, rxen = %d, txen = %d \r\n",
+    MessageOutput.printf("[PowerMeters::Sdm::Serial] rx = %d, tx = %d, dere = %d, rxen = %d, txen = %d \r\n",
             pin.powermeter_rx, pin.powermeter_tx, pin.powermeter_dere, pin.powermeter_rxen, pin.powermeter_txen);
 
     if (pin.powermeter_rx < 0 || pin.powermeter_tx < 0) {
-        MessageOutput.println("[PowerMeterSerialSdm] invalid pin config for SDM "
+        MessageOutput.println("[PowerMeters::Sdm::Serial] invalid pin config for SDM "
                 "power meter (RX and TX pins must be defined)");
         return false;
     }
@@ -53,7 +55,7 @@ bool PowerMeterSerialSdm::init()
     return true;
 }
 
-void PowerMeterSerialSdm::loop()
+void Provider::loop()
 {
     if (_taskHandle != nullptr) { return; }
 
@@ -62,23 +64,23 @@ void PowerMeterSerialSdm::loop()
     lock.unlock();
 
     uint32_t constexpr stackSize = 3072;
-    xTaskCreate(PowerMeterSerialSdm::pollingLoopHelper, "PM:SDM",
+    xTaskCreate(Provider::pollingLoopHelper, "PM:SDM",
             stackSize, this, 1/*prio*/, &_taskHandle);
 }
 
-float PowerMeterSerialSdm::getPowerTotal() const
+float Provider::getPowerTotal() const
 {
     std::lock_guard<std::mutex> l(_valueMutex);
     return _phase1Power + _phase2Power + _phase3Power;
 }
 
-bool PowerMeterSerialSdm::isDataValid() const
+bool Provider::isDataValid() const
 {
     uint32_t age = millis() - getLastUpdate();
     return getLastUpdate() > 0 && (age < (3 * _cfg.PollingInterval * 1000));
 }
 
-void PowerMeterSerialSdm::doMqttPublish() const
+void Provider::doMqttPublish() const
 {
     std::lock_guard<std::mutex> l(_valueMutex);
     mqttPublish("power1", _phase1Power);
@@ -94,15 +96,15 @@ void PowerMeterSerialSdm::doMqttPublish() const
     }
 }
 
-void PowerMeterSerialSdm::pollingLoopHelper(void* context)
+void Provider::pollingLoopHelper(void* context)
 {
-    auto pInstance = static_cast<PowerMeterSerialSdm*>(context);
+    auto pInstance = static_cast<Provider*>(context);
     pInstance->pollingLoop();
     pInstance->_taskDone = true;
     vTaskDelete(nullptr);
 }
 
-bool PowerMeterSerialSdm::readValue(std::unique_lock<std::mutex>& lock, uint16_t reg, float& targetVar)
+bool Provider::readValue(std::unique_lock<std::mutex>& lock, uint16_t reg, float& targetVar)
 {
     lock.unlock(); // reading values takes too long to keep holding the lock
     float val = _upSdm->readVal(reg, _cfg.Address);
@@ -118,7 +120,7 @@ bool PowerMeterSerialSdm::readValue(std::unique_lock<std::mutex>& lock, uint16_t
     switch (err) {
         case SDM_ERR_NO_ERROR:
             if (_verboseLogging) {
-                MessageOutput.printf("[PowerMeterSerialSdm]: read register %d "
+                MessageOutput.printf("[PowerMeters::Sdm::Serial]: read register %d "
                         "(0x%04x) successfully\r\n", reg, reg);
             }
 
@@ -126,23 +128,23 @@ bool PowerMeterSerialSdm::readValue(std::unique_lock<std::mutex>& lock, uint16_t
             return true;
             break;
         case SDM_ERR_CRC_ERROR:
-            MessageOutput.printf("[PowerMeterSerialSdm]: CRC error "
+            MessageOutput.printf("[PowerMeters::Sdm::Serial]: CRC error "
                     "while reading register %d (0x%04x)\r\n", reg, reg);
             break;
         case SDM_ERR_WRONG_BYTES:
-            MessageOutput.printf("[PowerMeterSerialSdm]: unexpected data in "
+            MessageOutput.printf("[PowerMeters::Sdm::Serial]: unexpected data in "
                     "message while reading register %d (0x%04x)\r\n", reg, reg);
             break;
         case SDM_ERR_NOT_ENOUGHT_BYTES:
-            MessageOutput.printf("[PowerMeterSerialSdm]: unexpected end of "
+            MessageOutput.printf("[PowerMeters::Sdm::Serial]: unexpected end of "
                     "message while reading register %d (0x%04x)\r\n", reg, reg);
             break;
         case SDM_ERR_TIMEOUT:
-            MessageOutput.printf("[PowerMeterSerialSdm]: timeout occured "
+            MessageOutput.printf("[PowerMeters::Sdm::Serial]: timeout occured "
                     "while reading register %d (0x%04x)\r\n", reg, reg);
             break;
         default:
-            MessageOutput.printf("[PowerMeterSerialSdm]: unknown SDM error "
+            MessageOutput.printf("[PowerMeters::Sdm::Serial]: unknown SDM error "
                     "code after reading register %d (0x%04x)\r\n", reg, reg);
             break;
     }
@@ -150,7 +152,7 @@ bool PowerMeterSerialSdm::readValue(std::unique_lock<std::mutex>& lock, uint16_t
     return false;
 }
 
-void PowerMeterSerialSdm::pollingLoop()
+void Provider::pollingLoop()
 {
     std::unique_lock<std::mutex> lock(_pollingMutex);
 
@@ -204,8 +206,10 @@ void PowerMeterSerialSdm::pollingLoop()
             _energyExport = static_cast<float>(energyExport);
         }
 
-        MessageOutput.printf("[PowerMeterSerialSdm] TotalPower: %5.2f\r\n", getPowerTotal());
+        MessageOutput.printf("[PowerMeters::Sdm::Serial] TotalPower: %5.2f\r\n", getPowerTotal());
 
         gotUpdate();
     }
 }
+
+} // namespace PowerMeters::Sdm::Serial

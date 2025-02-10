@@ -5,7 +5,7 @@
 #include "Display_Graphic.h"
 #include "Datastore.h"
 #include "I18n.h"
-#include "PowerMeter.h"
+#include <powermeter/Controller.h>
 #include "Configuration.h"
 #include <NetworkSettings.h>
 #include <map>

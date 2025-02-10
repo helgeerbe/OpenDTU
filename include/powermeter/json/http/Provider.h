@@ -8,19 +8,21 @@
 #include <condition_variable>
 #include <mutex>
 #include <stdint.h>
-#include "HttpGetter.h"
-#include "Configuration.h"
-#include "PowerMeterProvider.h"
+#include <Configuration.h>
+#include <HttpGetter.h>
+#include <powermeter/Provider.h>
 
 using Auth_t = HttpRequestConfig::Auth;
 using Unit_t = PowerMeterHttpJsonValue::Unit;
 
-class PowerMeterHttpJson : public PowerMeterProvider {
+namespace PowerMeters::Json::Http {
+
+class Provider : public ::PowerMeters::Provider {
 public:
-    explicit PowerMeterHttpJson(PowerMeterHttpJsonConfig const& cfg)
+    explicit Provider(PowerMeterHttpJsonConfig const& cfg)
         : _cfg(cfg) { }
 
-    ~PowerMeterHttpJson();
+    ~Provider();
 
     bool init() final;
     void loop() final;
@@ -51,3 +53,5 @@ private:
     mutable std::mutex _pollingMutex;
     std::condition_variable _cv;
 };
+
+} // namespace PowerMeters::Json::Http

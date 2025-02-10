@@ -5,22 +5,24 @@
 #include <mutex>
 #include <condition_variable>
 #include <SoftwareSerial.h>
-#include "Configuration.h"
-#include "PowerMeterProvider.h"
-#include "SDM.h"
+#include <Configuration.h>
+#include <powermeter/Provider.h>
+#include <SDM.h>
 
-class PowerMeterSerialSdm : public PowerMeterProvider {
+namespace PowerMeters::Sdm::Serial {
+
+class Provider : public ::PowerMeters::Provider {
 public:
     enum class Phases {
         One,
         Three
     };
 
-    PowerMeterSerialSdm(Phases phases, PowerMeterSerialSdmConfig const& cfg)
+    Provider(Phases phases, PowerMeterSerialSdmConfig const& cfg)
         : _phases(phases)
         , _cfg(cfg) { }
 
-    ~PowerMeterSerialSdm();
+    ~Provider();
 
     bool init() final;
     void loop() final;
@@ -58,3 +60,5 @@ private:
     mutable std::mutex _pollingMutex;
     std::condition_variable _cv;
 };
+
+} // namespace PowerMeters::Sdm::Serial

@@ -5,11 +5,13 @@
 #pragma once
 
 #include <cstdint>
-#include "PowerMeterProvider.h"
+#include <powermeter/Provider.h>
 
-class PowerMeterUdpSmaHomeManager : public PowerMeterProvider {
+namespace PowerMeters::Udp::SmaHM {
+
+class Provider : public ::PowerMeters::Provider {
 public:
-    ~PowerMeterUdpSmaHomeManager();
+    ~Provider();
 
     bool init() final;
     void loop() final;
@@ -29,3 +31,5 @@ private:
     uint32_t _previousMillis = 0;
     uint32_t _serial = 0;
 };
+
+} // namespace PowerMeters::Udp::SmaHM

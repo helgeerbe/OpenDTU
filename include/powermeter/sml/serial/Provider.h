@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 
-#include "PowerMeterSml.h"
 #include <SoftwareSerial.h>
+#include <powermeter/sml/Provider.h>
 
-class PowerMeterSerialSml : public PowerMeterSml {
+namespace PowerMeters::Sml::Serial {
+
+class Provider : public ::PowerMeters::Sml::Provider {
 public:
-    PowerMeterSerialSml()
-        : PowerMeterSml("PowerMeterSerialSml") { }
+    Provider()
+        : ::PowerMeters::Sml::Provider("PowerMeterSerialSml") { }
 
-    ~PowerMeterSerialSml();
+    ~Provider();
 
     bool init() final;
     void loop() final;
@@ -42,3 +44,5 @@ private:
 
     std::unique_ptr<SoftwareSerial> _upSmlSerial = nullptr;
 };
+
+} // namespace PowerMeters::Sml::Serial

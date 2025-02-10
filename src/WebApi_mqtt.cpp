@@ -15,7 +15,7 @@
 #include "WebApi_errors.h"
 #include "helper.h"
 #include "PowerLimiter.h"
-#include "PowerMeter.h"
+#include <powermeter/Controller.h>
 #include <AsyncJson.h>
 #include <solarcharger/Controller.h>
 

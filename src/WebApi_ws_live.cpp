@@ -9,7 +9,7 @@
 #include "WebApi.h"
 #include "Battery.h"
 #include <gridcharger/huawei/Controller.h>
-#include "PowerMeter.h"
+#include <powermeter/Controller.h>
 #include "defaults.h"
 #include <solarcharger/Controller.h>
 #include <AsyncJson.h>

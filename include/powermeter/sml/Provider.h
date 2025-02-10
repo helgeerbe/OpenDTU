@@ -7,17 +7,19 @@
 #include <stdint.h>
 #include <Arduino.h>
 #include <HTTPClient.h>
-#include "Configuration.h"
-#include "PowerMeterProvider.h"
-#include "sml.h"
+#include <Configuration.h>
+#include <powermeter/Provider.h>
+#include <sml.h>
 
-class PowerMeterSml : public PowerMeterProvider {
+namespace PowerMeters::Sml {
+
+class Provider : public ::PowerMeters::Provider {
 public:
     float getPowerTotal() const final;
     void doMqttPublish() const final;
 
 protected:
-    explicit PowerMeterSml(char const* user)
+    explicit Provider(char const* user)
         : _user(user) { }
 
     void reset();
@@ -67,3 +69,5 @@ private:
         {{0x01, 0x00, 0x02, 0x08, 0x00, 0xff}, &smlOBISWh, &_cache.energyExport, "energy export"}
     };
 };
+
+} // namespace PowerMeters::Sml

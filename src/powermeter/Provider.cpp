@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#include "PowerMeterProvider.h"
-#include "MqttSettings.h"
+#include <powermeter/Provider.h>
+#include <MqttSettings.h>
 
-bool PowerMeterProvider::isDataValid() const
+namespace PowerMeters {
+
+bool Provider::isDataValid() const
 {
     return _lastUpdate > 0 && ((millis() - _lastUpdate) < (30 * 1000));
 }
 
-void PowerMeterProvider::mqttPublish(String const& topic, float const& value) const
+void Provider::mqttPublish(String const& topic, float const& value) const
 {
     MqttSettings.publish("powermeter/" + topic, String(value));
 }
 
-void PowerMeterProvider::mqttLoop() const
+void Provider::mqttLoop() const
 {
     if (!MqttSettings.getConnected()) { return; }
 
@@ -27,3 +29,5 @@ void PowerMeterProvider::mqttLoop() const
 
     _lastMqttPublish = millis();
 }
+
+} // namespace PowerMeters

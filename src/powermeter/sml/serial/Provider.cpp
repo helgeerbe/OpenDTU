@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#include "PowerMeterSerialSml.h"
-#include "PinMapping.h"
-#include "MessageOutput.h"
+#include <powermeter/sml/serial/Provider.h>
+#include <PinMapping.h>
+#include <MessageOutput.h>
 
-bool PowerMeterSerialSml::init()
+namespace PowerMeters::Sml::Serial {
+
+bool Provider::init()
 {
     const PinMapping_t& pin = PinMapping.get();
 
-    MessageOutput.printf("[PowerMeterSerialSml] rx = %d\r\n", pin.powermeter_rx);
+    MessageOutput.printf("[PowerMeters::Sml::Serial] rx = %d\r\n", pin.powermeter_rx);
 
     if (pin.powermeter_rx < 0) {
-        MessageOutput.println("[PowerMeterSerialSml] invalid pin config "
+        MessageOutput.println("[PowerMeters::Sml::Serial] invalid pin config "
                 "for serial SML power meter (RX pin must be defined)");
         return false;
     }
@@ -26,7 +28,7 @@ bool PowerMeterSerialSml::init()
     return true;
 }
 
-void PowerMeterSerialSml::loop()
+void Provider::loop()
 {
     if (_taskHandle != nullptr) { return; }
 
@@ -35,11 +37,11 @@ void PowerMeterSerialSml::loop()
     lock.unlock();
 
     uint32_t constexpr stackSize = 3072;
-    xTaskCreate(PowerMeterSerialSml::pollingLoopHelper, "PM:SML",
+    xTaskCreate(Provider::pollingLoopHelper, "PM:SML",
             stackSize, this, 1/*prio*/, &_taskHandle);
 }
 
-PowerMeterSerialSml::~PowerMeterSerialSml()
+Provider::~Provider()
 {
     _taskDone = false;
 
@@ -58,15 +60,15 @@ PowerMeterSerialSml::~PowerMeterSerialSml()
     }
 }
 
-void PowerMeterSerialSml::pollingLoopHelper(void* context)
+void Provider::pollingLoopHelper(void* context)
 {
-    auto pInstance = static_cast<PowerMeterSerialSml*>(context);
+    auto pInstance = static_cast<Provider*>(context);
     pInstance->pollingLoop();
     pInstance->_taskDone = true;
     vTaskDelete(nullptr);
 }
 
-void PowerMeterSerialSml::pollingLoop()
+void Provider::pollingLoop()
 {
     int lastAvailable = 0;
     uint32_t gapStartMillis = 0;
@@ -115,8 +117,10 @@ void PowerMeterSerialSml::pollingLoop()
 
         lastAvailable = 0;
 
-        PowerMeterSml::reset();
+        ::PowerMeters::Sml::Provider::reset();
 
         lock.lock();
     }
 }
+
+} // namespace PowerMeters::Sml::Serial

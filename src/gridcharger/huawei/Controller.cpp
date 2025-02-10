@@ -7,7 +7,7 @@
 #include <gridcharger/huawei/MCP2515.h>
 #include <gridcharger/huawei/TWAI.h>
 #include "MessageOutput.h"
-#include "PowerMeter.h"
+#include <powermeter/Controller.h>
 #include "PowerLimiter.h"
 #include "Configuration.h"
 

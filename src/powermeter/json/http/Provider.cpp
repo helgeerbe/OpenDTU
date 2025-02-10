@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#include "Utils.h"
-#include "PowerMeterHttpJson.h"
-#include "MessageOutput.h"
+#include <Utils.h>
+#include <powermeter/json/http/Provider.h>
+#include <MessageOutput.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
-#include "mbedtls/sha256.h"
+#include <mbedtls/sha256.h>
 #include <base64.h>
 #include <ESPmDNS.h>
 
-PowerMeterHttpJson::~PowerMeterHttpJson()
+namespace PowerMeters::Json::Http {
+
+Provider::~Provider()
 {
     _taskDone = false;
 
@@ -24,7 +26,7 @@ PowerMeterHttpJson::~PowerMeterHttpJson()
     }
 }
 
-bool PowerMeterHttpJson::init()
+bool Provider::init()
 {
     for (uint8_t i = 0; i < POWERMETER_HTTP_JSON_MAX_VALUES; i++) {
         auto const& valueConfig = _cfg.Values[i];
@@ -43,15 +45,15 @@ bool PowerMeterHttpJson::init()
             continue;
         }
 
-        MessageOutput.printf("[PowerMeterHttpJson] Initializing HTTP getter for value %d failed:\r\n", i + 1);
-        MessageOutput.printf("[PowerMeterHttpJson] %s\r\n", _httpGetters[i]->getErrorText());
+        MessageOutput.printf("[PowerMeters::Json::Http] Initializing HTTP getter for value %d failed:\r\n", i + 1);
+        MessageOutput.printf("[PowerMeters::Json::Http] %s\r\n", _httpGetters[i]->getErrorText());
         return false;
     }
 
     return true;
 }
 
-void PowerMeterHttpJson::loop()
+void Provider::loop()
 {
     if (_taskHandle != nullptr) { return; }
 
@@ -60,19 +62,19 @@ void PowerMeterHttpJson::loop()
     lock.unlock();
 
     uint32_t constexpr stackSize = 3072;
-    xTaskCreate(PowerMeterHttpJson::pollingLoopHelper, "PM:HTTP+JSON",
+    xTaskCreate(Provider::pollingLoopHelper, "PM:HTTP+JSON",
             stackSize, this, 1/*prio*/, &_taskHandle);
 }
 
-void PowerMeterHttpJson::pollingLoopHelper(void* context)
+void Provider::pollingLoopHelper(void* context)
 {
-    auto pInstance = static_cast<PowerMeterHttpJson*>(context);
+    auto pInstance = static_cast<Provider*>(context);
     pInstance->pollingLoop();
     pInstance->_taskDone = true;
     vTaskDelete(nullptr);
 }
 
-void PowerMeterHttpJson::pollingLoop()
+void Provider::pollingLoop()
 {
     std::unique_lock<std::mutex> lock(_pollingMutex);
 
@@ -93,17 +95,17 @@ void PowerMeterHttpJson::pollingLoop()
         lock.lock();
 
         if (std::holds_alternative<String>(res)) {
-            MessageOutput.printf("[PowerMeterHttpJson] %s\r\n", std::get<String>(res).c_str());
+            MessageOutput.printf("[PowerMeters::Json::Http] %s\r\n", std::get<String>(res).c_str());
             continue;
         }
 
-        MessageOutput.printf("[PowerMeterHttpJson] New total: %.2f\r\n", getPowerTotal());
+        MessageOutput.printf("[PowerMeters::Json::Http] New total: %.2f\r\n", getPowerTotal());
 
         gotUpdate();
     }
 }
 
-PowerMeterHttpJson::poll_result_t PowerMeterHttpJson::poll()
+Provider::poll_result_t Provider::poll()
 {
     power_values_t cache;
     JsonDocument jsonResponse;
@@ -169,7 +171,7 @@ PowerMeterHttpJson::poll_result_t PowerMeterHttpJson::poll()
     return cache;
 }
 
-float PowerMeterHttpJson::getPowerTotal() const
+float Provider::getPowerTotal() const
 {
     float sum = 0.0;
     std::unique_lock<std::mutex> lock(_valueMutex);
@@ -177,16 +179,18 @@ float PowerMeterHttpJson::getPowerTotal() const
     return sum;
 }
 
-bool PowerMeterHttpJson::isDataValid() const
+bool Provider::isDataValid() const
 {
     uint32_t age = millis() - getLastUpdate();
     return getLastUpdate() > 0 && (age < (3 * _cfg.PollingInterval * 1000));
 }
 
-void PowerMeterHttpJson::doMqttPublish() const
+void Provider::doMqttPublish() const
 {
     std::unique_lock<std::mutex> lock(_valueMutex);
     mqttPublish("power1", _powerValues[0]);
     mqttPublish("power2", _powerValues[1]);
     mqttPublish("power3", _powerValues[2]);
 }
+
+} // namespace PowerMeters::Json::Http
