@@ -338,6 +338,9 @@ class VictronSmartShuntStats : public BatteryStats {
         bool _alarmLowSOC;
         bool _alarmLowTemperature;
         bool _alarmHighTemperature;
+
+        std::optional<float> _oBatteryResistor = std::nullopt;
+        std::optional<float> _oOpenCircuitVoltage = std::nullopt;
 };
 
 class MqttBatteryStats : public BatteryStats {

@@ -7,6 +7,7 @@
 #include "JkBmsDataPoints.h"
 #include "JbdBmsDataPoints.h"
 #include "MqttSettings.h"
+#include "BatteryGuard.h"
 
 template<typename T>
 static void addLiveViewInSection(JsonVariant& root,
@@ -854,6 +855,10 @@ void VictronSmartShuntStats::updateFrom(VeDirectShuntController::data_t const& s
     _alarmLowTemperature = shuntData.alarmReason_AR & 32;
     _alarmHighTemperature = shuntData.alarmReason_AR & 64;
 
+    BatteryGuard.updateBatteryValues(shuntData.batteryVoltage_V_mV / 1000.0f, shuntData.batteryCurrent_I_mA / 1000.0f, millis()); //todo: why millis()?
+    _oBatteryResistor = BatteryGuard.getInternalResistance();
+    _oOpenCircuitVoltage = BatteryGuard.getOpenCircuitVoltage();
+
     _lastUpdate = VeDirectShunt.getLastUpdate();
 }
 
@@ -871,6 +876,12 @@ void VictronSmartShuntStats::getLiveViewData(JsonVariant& root) const {
     addLiveViewValue(root, "lastFullCharge", _lastFullCharge, "min", 0);
     if (_tempPresent) {
         addLiveViewValue(root, "temperature", _temperature, "°C", 0);
+    }
+    if (_oBatteryResistor.has_value()) {
+        addLiveViewValue(root, "resistor", _oBatteryResistor.value() * 1000.0f, "mOhm", 1);
+    }
+    if (_oOpenCircuitVoltage.has_value()) {
+        addLiveViewValue(root, "openCircuitVoltage", _oOpenCircuitVoltage.value(), "V", 3);
     }
 
     addLiveViewAlarm(root, "lowVoltage", _alarmLowVoltage);

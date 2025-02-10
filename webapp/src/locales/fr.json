@@ -910,6 +910,8 @@
         "current": "Current",
         "power": "Power",
         "temperature": "Temperature",
+        "resistor": "Internal resistance",
+        "openCircuitVoltage": "Open circuit voltage",
         "bmsTemp": "BMS temperature",
         "chargeVoltage": "Requested charge voltage",
         "chargeCurrentLimitation": "Charge current limit",
